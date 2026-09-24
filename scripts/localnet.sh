@@ -26,6 +26,7 @@ exec solana-test-validator \
   --reset \
   --quiet \
   --ledger "$LEDGER" \
+  --limit-ledger-size 50000000 \
   --upgradeable-program "$PROGRAM_ID" "$PROGRAM_SO" "$WALLET" \
   --bpf-program "$RAYDIUM_CPMM" "$FIXTURES/raydium_cpmm.so" \
   --account "$AMM_CONFIG" "$FIXTURES/$AMM_CONFIG.json" \

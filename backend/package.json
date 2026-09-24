@@ -2,9 +2,30 @@
   "name": "@launchpad/backend",
   "version": "0.1.0",
   "private": true,
+  "description": "Indexer, REST API and keeper for the Solana launchpad",
   "type": "module",
+  "main": "dist/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "test": "echo 'backend tests not configured yet'"
+    "dev": "tsx watch --disable-warning=ExperimentalWarning src/index.ts",
+    "start": "node --disable-warning=ExperimentalWarning dist/index.js",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run test/api.test.ts test/storage.test.ts",
+    "test:e2e": "vitest run test/e2e.test.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "@launchpad/sdk": "*",
+    "@solana/web3.js": "^1.98.4",
+    "hono": "^4.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=22.13"
   }
 }
