@@ -90,10 +90,10 @@ pub struct Migrate<'info> {
     #[account(mut, address = config.fee_recipient @ LaunchpadError::InvalidFeeRecipient)]
     pub fee_recipient: UncheckedAccount<'info>,
 
-    /// CHECK: must be the configured Raydium CPMM program.
+    /// CHECK: must be the Raydium CPMM program compiled into this program.
     #[account(
         executable,
-        address = config.raydium_cpmm_program @ LaunchpadError::InvalidRaydiumAccount,
+        address = RAYDIUM_CPMM_PROGRAM_ID @ LaunchpadError::InvalidRaydiumAccount,
     )]
     pub raydium_program: UncheckedAccount<'info>,
 

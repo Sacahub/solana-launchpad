@@ -10,9 +10,13 @@
     "build": "npm run build -w sdk && npm run build -w backend",
     "sync-idl": "node scripts/sync-idl.mjs",
     "test": "npm test -w sdk && npm test -w backend",
-    "localnet": "bash scripts/localnet.sh"
+    "localnet": "bash scripts/localnet.sh",
+    "cli": "tsx --no-deprecation scripts/cli.ts"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.0"
   }
 }

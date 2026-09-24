@@ -47,7 +47,8 @@ export interface ConfigParams {
   creatorFeeBps: number;
   creationFeeLamports: bigint;
   migrationFeeLamports: bigint;
-  raydium: RaydiumConfig;
+  /** Pool fee tier and Raydium's fee receiver (the program id is fixed on-chain). */
+  raydium: Pick<RaydiumConfig, "ammConfig" | "createPoolFee">;
 }
 
 export interface TokenCreatedEvent {

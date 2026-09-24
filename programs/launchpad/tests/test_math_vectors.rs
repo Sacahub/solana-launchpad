@@ -5,7 +5,10 @@
 use launchpad::math::{self, Fees};
 use serde_json::{json, Value};
 
-const PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../tests/fixtures/math_vectors.json");
+const PATH: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../tests/fixtures/math_vectors.json"
+);
 
 fn generate() -> Value {
     let mut seed: u64 = 0x9e37_79b9_7f4a_7c15;
@@ -16,10 +19,22 @@ fn generate() -> Value {
         seed
     };
     let fees_list = [
-        Fees { protocol_bps: 100, creator_bps: 50 },
-        Fees { protocol_bps: 0, creator_bps: 0 },
-        Fees { protocol_bps: 250, creator_bps: 250 },
-        Fees { protocol_bps: 37, creator_bps: 11 },
+        Fees {
+            protocol_bps: 100,
+            creator_bps: 50,
+        },
+        Fees {
+            protocol_bps: 0,
+            creator_bps: 0,
+        },
+        Fees {
+            protocol_bps: 250,
+            creator_bps: 250,
+        },
+        Fees {
+            protocol_bps: 37,
+            creator_bps: 11,
+        },
     ];
     let mut vectors = vec![];
     for i in 0..400 {

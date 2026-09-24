@@ -837,7 +837,8 @@ export type Launchpad = {
           "writable": true
         },
         {
-          "name": "raydiumProgram"
+          "name": "raydiumProgram",
+          "address": "CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C"
         },
         {
           "name": "ammConfig"
@@ -1660,18 +1661,19 @@ export type Launchpad = {
             "type": "u64"
           },
           {
-            "name": "raydiumCpmmProgram",
+            "name": "raydiumAmmConfig",
             "docs": [
-              "Raydium CPMM program and pool parameters used at graduation."
+              "Raydium CPMM pool parameters used at graduation (the program itself",
+              "is the compile-time constant [`RAYDIUM_CPMM_PROGRAM_ID`]).",
+              "AMM config = fee tier of the pool; must be owned by the Raydium program."
             ],
             "type": "pubkey"
           },
           {
-            "name": "raydiumAmmConfig",
-            "type": "pubkey"
-          },
-          {
             "name": "raydiumCreatePoolFee",
+            "docs": [
+              "Raydium's pool creation fee receiver (validated by Raydium itself)."
+            ],
             "type": "pubkey"
           },
           {
@@ -1744,10 +1746,6 @@ export type Launchpad = {
           {
             "name": "migrationFeeLamports",
             "type": "u64"
-          },
-          {
-            "name": "raydiumCpmmProgram",
-            "type": "pubkey"
           },
           {
             "name": "raydiumAmmConfig",
@@ -2116,6 +2114,18 @@ export type Launchpad = {
       ],
       "type": "bytes",
       "value": "[112, 111, 111, 108, 95, 99, 114, 101, 97, 116, 111, 114]"
+    },
+    {
+      "name": "raydiumCpmmProgramId",
+      "docs": [
+        "Raydium CPMM program that receives the liquidity at graduation.",
+        "",
+        "Compiled into the program (not configurable) so that nobody, not even the",
+        "admin, can redirect the liquidity of a completed curve to another program.",
+        "Build with `--features devnet` for devnet."
+      ],
+      "type": "pubkey",
+      "value": "CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C"
     },
     {
       "name": "raydiumPoolSeed",

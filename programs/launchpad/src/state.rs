@@ -33,9 +33,11 @@ pub struct Config {
     /// Flat fee taken from the raised SOL when the token graduates.
     pub migration_fee_lamports: u64,
 
-    /// Raydium CPMM program and pool parameters used at graduation.
-    pub raydium_cpmm_program: Pubkey,
+    /// Raydium CPMM pool parameters used at graduation (the program itself
+    /// is the compile-time constant [`RAYDIUM_CPMM_PROGRAM_ID`]).
+    /// AMM config = fee tier of the pool; must be owned by the Raydium program.
     pub raydium_amm_config: Pubkey,
+    /// Raydium's pool creation fee receiver (validated by Raydium itself).
     pub raydium_create_pool_fee: Pubkey,
 
     pub create_paused: bool,
@@ -46,10 +48,6 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn total_fee_bps(&self) -> u16 {
-        self.protocol_fee_bps + self.creator_fee_bps
-    }
-
     pub fn apply(&mut self, params: &ConfigParams) {
         self.fee_recipient = params.fee_recipient;
         self.initial_virtual_sol_reserves = params.initial_virtual_sol_reserves;
@@ -60,7 +58,6 @@ impl Config {
         self.creator_fee_bps = params.creator_fee_bps;
         self.creation_fee_lamports = params.creation_fee_lamports;
         self.migration_fee_lamports = params.migration_fee_lamports;
-        self.raydium_cpmm_program = params.raydium_cpmm_program;
         self.raydium_amm_config = params.raydium_amm_config;
         self.raydium_create_pool_fee = params.raydium_create_pool_fee;
     }
@@ -78,7 +75,6 @@ pub struct ConfigParams {
     pub creator_fee_bps: u16,
     pub creation_fee_lamports: u64,
     pub migration_fee_lamports: u64,
-    pub raydium_cpmm_program: Pubkey,
     pub raydium_amm_config: Pubkey,
     pub raydium_create_pool_fee: Pubkey,
 }
@@ -107,8 +103,7 @@ impl ConfigParams {
             LaunchpadError::InvalidConfig
         );
         require!(
-            self.raydium_cpmm_program != Pubkey::default()
-                && self.raydium_amm_config != Pubkey::default()
+            self.raydium_amm_config != Pubkey::default()
                 && self.raydium_create_pool_fee != Pubkey::default(),
             LaunchpadError::InvalidConfig
         );

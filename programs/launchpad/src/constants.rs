@@ -22,6 +22,18 @@ pub const POOL_CREATOR_SEED: &[u8] = b"pool_creator";
 #[constant]
 pub const RAYDIUM_POOL_SEED: &[u8] = b"raydium_pool";
 
+/// Raydium CPMM program that receives the liquidity at graduation.
+///
+/// Compiled into the program (not configurable) so that nobody, not even the
+/// admin, can redirect the liquidity of a completed curve to another program.
+/// Build with `--features devnet` for devnet.
+#[cfg(not(feature = "devnet"))]
+#[constant]
+pub const RAYDIUM_CPMM_PROGRAM_ID: Pubkey = pubkey!("CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C");
+#[cfg(feature = "devnet")]
+#[constant]
+pub const RAYDIUM_CPMM_PROGRAM_ID: Pubkey = pubkey!("DRaycpLY18LhpbydsBWbVJtxpNv9oXPgjRSfpF2bWpYb");
+
 /// Decimals of every token launched through the launchpad.
 #[constant]
 pub const TOKEN_DECIMALS: u8 = 6;

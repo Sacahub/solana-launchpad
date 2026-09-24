@@ -12,3 +12,5 @@ dist
 *.sqlite
 *.sqlite-journal
 *.db
+data/
+backend/data/

@@ -65,7 +65,6 @@ pub fn default_params(fee_recipient: Pubkey) -> ConfigParams {
         creator_fee_bps: 50,
         creation_fee_lamports: 20_000_000,
         migration_fee_lamports: 500_000_000,
-        raydium_cpmm_program: RAYDIUM_CPMM,
         raydium_amm_config: RAYDIUM_AMM_CONFIG,
         raydium_create_pool_fee: RAYDIUM_CREATE_POOL_FEE,
     }

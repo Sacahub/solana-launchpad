@@ -2,6 +2,7 @@
 import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
 
+import { RAYDIUM_CPMM_PROGRAM_ID } from "./constants.js";
 import type { BondingCurveAccount, ConfigAccount, CurveStatus } from "./types.js";
 
 export type Numberish = bigint | number | string | BN;
@@ -74,7 +75,7 @@ export function configFromRaw(raw: Raw): ConfigAccount {
     creationFeeLamports: toBigInt(raw.creationFeeLamports),
     migrationFeeLamports: toBigInt(raw.migrationFeeLamports),
     raydium: {
-      cpmmProgram: raw.raydiumCpmmProgram,
+      cpmmProgram: RAYDIUM_CPMM_PROGRAM_ID,
       ammConfig: raw.raydiumAmmConfig,
       createPoolFee: raw.raydiumCreatePoolFee,
     },

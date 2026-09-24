@@ -43,7 +43,8 @@ fn initialize_sets_the_config() {
         config.initial_virtual_sol_reserves,
         params.initial_virtual_sol_reserves
     );
-    assert_eq!(config.raydium_cpmm_program, RAYDIUM_CPMM);
+    assert_eq!(config.raydium_amm_config, RAYDIUM_AMM_CONFIG);
+    assert_eq!(launchpad::constants::RAYDIUM_CPMM_PROGRAM_ID, RAYDIUM_CPMM);
     assert!(!config.create_paused && !config.trading_paused);
 }
 

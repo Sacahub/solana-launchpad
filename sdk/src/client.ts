@@ -574,7 +574,6 @@ function configParamsToRaw(params: ConfigParams) {
     creatorFeeBps: params.creatorFeeBps,
     creationFeeLamports: toBN(params.creationFeeLamports),
     migrationFeeLamports: toBN(params.migrationFeeLamports),
-    raydiumCpmmProgram: params.raydium.cpmmProgram,
     raydiumAmmConfig: params.raydium.ammConfig,
     raydiumCreatePoolFee: params.raydium.createPoolFee,
   };

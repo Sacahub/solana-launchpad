@@ -5,6 +5,19 @@ import idl from "./idl/launchpad.json" with { type: "json" };
 /** Program id declared in the IDL (`declare_id!` in the program). */
 export const LAUNCHPAD_PROGRAM_ID = new PublicKey(idl.address);
 
+const idlConstant = (name: string): string => {
+  const constant = idl.constants.find((c) => c.name === name);
+  if (!constant) throw new Error(`constant ${name} missing from the IDL`);
+  return constant.value;
+};
+
+/**
+ * Raydium CPMM program compiled into the launchpad program (mainnet id by
+ * default, devnet id when built with `--features devnet`). Liquidity can only
+ * ever graduate to this program.
+ */
+export const RAYDIUM_CPMM_PROGRAM_ID = new PublicKey(idlConstant("RAYDIUM_CPMM_PROGRAM_ID"));
+
 export const SEEDS = {
   config: Buffer.from("config"),
   bondingCurve: Buffer.from("bonding_curve"),

@@ -831,7 +831,8 @@
           "writable": true
         },
         {
-          "name": "raydium_program"
+          "name": "raydium_program",
+          "address": "CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C"
         },
         {
           "name": "amm_config"
@@ -1654,18 +1655,19 @@
             "type": "u64"
           },
           {
-            "name": "raydium_cpmm_program",
+            "name": "raydium_amm_config",
             "docs": [
-              "Raydium CPMM program and pool parameters used at graduation."
+              "Raydium CPMM pool parameters used at graduation (the program itself",
+              "is the compile-time constant [`RAYDIUM_CPMM_PROGRAM_ID`]).",
+              "AMM config = fee tier of the pool; must be owned by the Raydium program."
             ],
             "type": "pubkey"
           },
           {
-            "name": "raydium_amm_config",
-            "type": "pubkey"
-          },
-          {
             "name": "raydium_create_pool_fee",
+            "docs": [
+              "Raydium's pool creation fee receiver (validated by Raydium itself)."
+            ],
             "type": "pubkey"
           },
           {
@@ -1738,10 +1740,6 @@
           {
             "name": "migration_fee_lamports",
             "type": "u64"
-          },
-          {
-            "name": "raydium_cpmm_program",
-            "type": "pubkey"
           },
           {
             "name": "raydium_amm_config",
@@ -2110,6 +2108,18 @@
       ],
       "type": "bytes",
       "value": "[112, 111, 111, 108, 95, 99, 114, 101, 97, 116, 111, 114]"
+    },
+    {
+      "name": "RAYDIUM_CPMM_PROGRAM_ID",
+      "docs": [
+        "Raydium CPMM program that receives the liquidity at graduation.",
+        "",
+        "Compiled into the program (not configurable) so that nobody, not even the",
+        "admin, can redirect the liquidity of a completed curve to another program.",
+        "Build with `--features devnet` for devnet."
+      ],
+      "type": "pubkey",
+      "value": "CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C"
     },
     {
       "name": "RAYDIUM_POOL_SEED",
