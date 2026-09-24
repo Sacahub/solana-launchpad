@@ -268,7 +268,9 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(`✘ ${err instanceof Error ? err.message : err}`);
-  if (err?.logs) console.error(err.logs.join("\n"));
+  // Surface the program's error (e.g. "Error Code: InvalidFeeRecipient") from the simulation logs.
+  const logs: string[] = err?.logs ?? err?.transactionLogs ?? [];
+  const anchorError = logs.find((l) => l.includes("Error Code:"));
+  console.error(`✘ ${anchorError ? anchorError.replace(/^Program log: /, "") : err instanceof Error ? err.message : err}`);
   process.exit(1);
 });

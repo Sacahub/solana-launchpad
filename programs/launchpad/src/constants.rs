@@ -55,6 +55,12 @@ pub const MAX_MIGRATION_FEE_LAMPORTS: u64 = 10_000_000_000_u64; // 10 SOL
 #[constant]
 pub const MIN_GRADUATION_LIQUIDITY_LAMPORTS: u64 = 1_000_000_000_u64; // 1 SOL
 
+/// Liveness fallback: a completed curve that could not graduate within this
+/// delay (e.g. Raydium disabled pool creation or changed its interface)
+/// reopens for selling, so the raised SOL can never be locked forever.
+#[constant]
+pub const MIGRATION_TIMEOUT_SECS: i64 = 604_800; // 7 days
+
 /// Metadata limits (Token-2022 metadata extension, stored on the mint itself).
 #[constant]
 pub const MAX_NAME_LEN: u16 = 32;

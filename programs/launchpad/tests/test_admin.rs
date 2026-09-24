@@ -7,14 +7,7 @@ use solana_keypair::Keypair;
 use solana_signer::Signer;
 
 fn update_config_ix(env: &Env, admin: &Pubkey, params: &ConfigParams) -> Instruction {
-    Instruction::new_with_bytes(
-        launchpad::ID,
-        &launchpad::instruction::UpdateConfig {
-            params: params.clone(),
-        }
-        .data(),
-        env.admin_accounts(admin),
-    )
+    env.update_config_ix(admin, params)
 }
 
 fn set_paused_ix(env: &Env, admin: &Pubkey, create: bool, trading: bool) -> Instruction {
@@ -110,6 +103,27 @@ fn initialize_rejects_invalid_params() {
     let mut p = base.clone();
     p.fee_recipient = Pubkey::default();
     assert_error(env.initialize(&p), LaunchpadError::InvalidConfig);
+
+    // Not enough supply left to pair all the raised SOL at the final price.
+    let needed = launchpad::math::max_pool_tokens(
+        base.initial_virtual_token_reserves,
+        base.initial_real_token_reserves,
+    )
+    .unwrap();
+    let mut p = base.clone();
+    p.token_total_supply = p.initial_real_token_reserves + 1;
+    assert_error(env.initialize(&p), LaunchpadError::InvalidConfig);
+    p.token_total_supply = p.initial_real_token_reserves + needed - 1;
+    assert_error(env.initialize(&p), LaunchpadError::InvalidConfig);
+    p.token_total_supply = p.initial_real_token_reserves + needed;
+    assert!(p.validate().is_ok());
+
+    // The fee recipient must be a funded system account.
+    let mut p = base.clone();
+    p.fee_recipient = Keypair::new().pubkey(); // no lamports
+    assert_error(env.initialize(&p), LaunchpadError::InvalidFeeRecipient);
+    p.fee_recipient = anchor_spl::token::ID; // executable program
+    assert_error(env.initialize(&p), LaunchpadError::InvalidFeeRecipient);
 
     env.initialize(&base).unwrap();
 }

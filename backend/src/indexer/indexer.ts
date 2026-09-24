@@ -173,6 +173,11 @@ export function applyEvent(db: Db, event: LaunchpadEvent, ctx: EventContext): Li
       db.markCompleted(mint, event.data.timestamp);
       return { type: "curveCompleted", mint, signature: ctx.signature, data: db.getToken(mint) };
     }
+    case "curveReopened": {
+      const mint = event.data.mint.toBase58();
+      db.markReopened(mint);
+      return { type: "curveReopened", mint, signature: ctx.signature, data: db.getToken(mint) };
+    }
     case "migrated": {
       const mint = event.data.mint.toBase58();
       db.insertGraduation(event.data, ctx);

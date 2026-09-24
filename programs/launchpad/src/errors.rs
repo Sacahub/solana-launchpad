@@ -32,7 +32,7 @@ pub enum LaunchpadError {
     InsufficientReserves,
     #[msg("Arithmetic overflow")]
     MathOverflow,
-    #[msg("Fee recipient does not match the configuration")]
+    #[msg("Fee recipient must match the configuration and be a rent-exempt system account")]
     InvalidFeeRecipient,
     #[msg("Account does not match the Raydium configuration")]
     InvalidRaydiumAccount,

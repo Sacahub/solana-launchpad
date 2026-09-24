@@ -25,6 +25,7 @@ import {
 import {
   COMPUTE_UNITS,
   LAUNCHPAD_PROGRAM_ID,
+  MIGRATION_TIMEOUT_SECS,
   MAX_NAME_LEN,
   MAX_SYMBOL_LEN,
   MAX_URI_LEN,
@@ -184,8 +185,21 @@ export class LaunchpadClient {
     return quoteBuy(curve, BigInt(toBN(solAmount).toString()), LaunchpadClient.fees(config));
   }
 
+  /**
+   * True when sells are accepted: the curve is trading, or it completed but
+   * could not graduate for `MIGRATION_TIMEOUT_SECS` (the sell reopens it).
+   */
+  static canSell(curve: BondingCurveAccount, nowSecs = Math.floor(Date.now() / 1000)): boolean {
+    if (curve.status === "trading") return true;
+    return (
+      curve.status === "complete" &&
+      curve.completedAt !== null &&
+      nowSecs >= curve.completedAt + MIGRATION_TIMEOUT_SECS
+    );
+  }
+
   async quoteSell(mint: PublicKey, tokenAmount: Numberish): Promise<SellQuote> {
-    const [curve, config] = await Promise.all([this.requireTradingCurve(mint), this.fetchConfig()]);
+    const [curve, config] = await Promise.all([this.requireTradingCurve(mint, true), this.fetchConfig()]);
     return quoteSell(curve, BigInt(toBN(tokenAmount).toString()), LaunchpadClient.fees(config));
   }
 
@@ -410,6 +424,7 @@ export class LaunchpadClient {
 
   // ----------------------------------------------------------------- admin
 
+  /** `params.feeRecipient` must already exist as a rent-exempt system account. */
   async initializeInstruction(admin: PublicKey, params: ConfigParams): Promise<TransactionInstruction> {
     const programData = PublicKey.findProgramAddressSync(
       [this.programId.toBuffer()],
@@ -422,6 +437,7 @@ export class LaunchpadClient {
         config: this.configAddress,
         launchpadProgram: this.programId,
         programData,
+        feeRecipient: params.feeRecipient,
         systemProgram: SystemProgram.programId,
         eventAuthority: findEventAuthority(this.programId),
         program: this.programId,
@@ -432,7 +448,7 @@ export class LaunchpadClient {
   async updateConfigInstruction(admin: PublicKey, params: ConfigParams): Promise<TransactionInstruction> {
     return this.program.methods
       .updateConfig(configParamsToRaw(params))
-      .accountsStrict(this.adminAccounts(admin))
+      .accountsStrict({ ...this.adminAccounts(admin), feeRecipient: params.feeRecipient })
       .instruction();
   }
 
@@ -542,9 +558,10 @@ export class LaunchpadClient {
 
   // --------------------------------------------------------------- helpers
 
-  private async requireTradingCurve(mint: PublicKey): Promise<BondingCurveAccount> {
+  private async requireTradingCurve(mint: PublicKey, selling = false): Promise<BondingCurveAccount> {
     const curve = await this.fetchBondingCurve(mint);
     if (!curve) throw new Error(`no bonding curve for mint ${mint.toBase58()}`);
+    if (selling && LaunchpadClient.canSell(curve)) return curve;
     if (curve.status !== "trading") {
       throw new Error(
         curve.status === "complete"

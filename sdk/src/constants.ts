@@ -18,6 +18,12 @@ const idlConstant = (name: string): string => {
  */
 export const RAYDIUM_CPMM_PROGRAM_ID = new PublicKey(idlConstant("RAYDIUM_CPMM_PROGRAM_ID"));
 
+/**
+ * A completed curve that could not graduate for this many seconds reopens
+ * for selling (the first sell reopens it).
+ */
+export const MIGRATION_TIMEOUT_SECS = Number(idlConstant("MIGRATION_TIMEOUT_SECS"));
+
 export const SEEDS = {
   config: Buffer.from("config"),
   bondingCurve: Buffer.from("bonding_curve"),

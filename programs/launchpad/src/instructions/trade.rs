@@ -7,7 +7,7 @@ use anchor_spl::{
 use crate::{
     constants::*,
     errors::LaunchpadError,
-    events::{CurveCompleted, Trade},
+    events::{CurveCompleted, CurveReopened, Trade},
     math::{self, Fees},
     state::{BondingCurve, Config, CurveStatus},
 };
@@ -192,13 +192,30 @@ pub struct Sell<'info> {
 
 /// Sells exactly `token_amount` tokens, receiving at least `min_sol_amount`
 /// lamports (fees already deducted).
+///
+/// A completed curve that could not graduate for [`MIGRATION_TIMEOUT_SECS`]
+/// is reopened by the first sell: holders can always get out.
 pub fn handle_sell(ctx: Context<Sell>, token_amount: u64, min_sol_amount: u64) -> Result<()> {
-    let config = &ctx.accounts.config;
-    require!(!config.trading_paused, LaunchpadError::TradingPaused);
+    require!(
+        !ctx.accounts.config.trading_paused,
+        LaunchpadError::TradingPaused
+    );
+    let now = Clock::get()?.unix_timestamp;
+    let reopened = {
+        let curve = &mut ctx.accounts.bonding_curve;
+        let stuck = curve.status == CurveStatus::Complete
+            && now >= curve.completed_at.saturating_add(MIGRATION_TIMEOUT_SECS);
+        if stuck {
+            curve.status = CurveStatus::Trading;
+            curve.completed_at = 0;
+        }
+        stuck
+    };
     require!(
         ctx.accounts.bonding_curve.is_trading(),
         LaunchpadError::CurveNotTrading
     );
+    let config = &ctx.accounts.config;
 
     let fees = Fees {
         protocol_bps: config.protocol_fee_bps,
@@ -237,8 +254,13 @@ pub fn handle_sell(ctx: Context<Sell>, token_amount: u64, min_sol_amount: u64) -
     ctx.accounts.bonding_curve.sub_lamports(quote.sol_out)?;
     ctx.accounts.seller.add_lamports(quote.sol_out)?;
 
-    let now = Clock::get()?.unix_timestamp;
     let mint_key = ctx.accounts.mint.key();
+    if reopened {
+        emit_cpi!(CurveReopened {
+            mint: mint_key,
+            timestamp: now,
+        });
+    }
     let curve = &mut ctx.accounts.bonding_curve;
     curve.virtual_sol_reserves = sub(curve.virtual_sol_reserves, quote.sol_amount)?;
     curve.virtual_token_reserves = add(curve.virtual_token_reserves, quote.token_amount)?;

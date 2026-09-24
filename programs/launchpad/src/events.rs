@@ -55,6 +55,14 @@ pub struct CurveCompleted {
     pub timestamp: i64,
 }
 
+/// A completed curve that could not graduate within `MIGRATION_TIMEOUT_SECS`
+/// was reopened by a sell.
+#[event]
+pub struct CurveReopened {
+    pub mint: Pubkey,
+    pub timestamp: i64,
+}
+
 #[event]
 pub struct Migrated {
     pub mint: Pubkey,

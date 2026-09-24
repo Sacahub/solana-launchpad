@@ -188,6 +188,19 @@ describe("indexing and token API", () => {
     );
     expect(db.getToken(mint.toBase58())!.status).toBe("complete");
 
+    // A stuck curve reopened after the migration timeout, then completed again.
+    applyEvent(db, { name: "curveReopened", data: { mint, timestamp: T0 + 7 } }, ctx(2));
+    expect(db.getToken(mint.toBase58())).toMatchObject({ status: "trading", completedAt: null });
+    applyEvent(
+      db,
+      {
+        name: "curveCompleted",
+        data: { mint, realSolReserves: 85n * SOL, virtualSolReserves: 115n * SOL, virtualTokenReserves: 279_900_000n * UNIT, timestamp: T0 + 8 },
+      },
+      ctx(2),
+    );
+    expect(db.getToken(mint.toBase58())!.status).toBe("complete");
+
     const migrated: MigratedEvent = {
       mint,
       pool: key(),

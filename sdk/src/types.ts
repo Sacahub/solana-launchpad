@@ -90,6 +90,11 @@ export interface CurveCompletedEvent {
   timestamp: number;
 }
 
+export interface CurveReopenedEvent {
+  mint: PublicKey;
+  timestamp: number;
+}
+
 export interface MigratedEvent {
   mint: PublicKey;
   pool: PublicKey;
@@ -127,6 +132,7 @@ export type LaunchpadEvent =
   | { name: "tokenCreated"; data: TokenCreatedEvent }
   | { name: "trade"; data: TradeEvent }
   | { name: "curveCompleted"; data: CurveCompletedEvent }
+  | { name: "curveReopened"; data: CurveReopenedEvent }
   | { name: "migrated"; data: MigratedEvent }
   | { name: "creatorFeesClaimed"; data: CreatorFeesClaimedEvent }
   | { name: "protocolFeesCollected"; data: ProtocolFeesCollectedEvent }

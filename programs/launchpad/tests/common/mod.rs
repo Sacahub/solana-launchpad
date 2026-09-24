@@ -353,6 +353,7 @@ impl Env {
                 config: config_pda(),
                 launchpad_program: launchpad::ID,
                 program_data,
+                fee_recipient: params.fee_recipient,
                 system_program: system_program::ID,
                 event_authority: event_authority(),
                 program: launchpad::ID,
@@ -365,6 +366,24 @@ impl Env {
         let admin = self.admin.insecure_clone();
         let ix = self.initialize_ix(&admin.pubkey(), params);
         self.send(&[ix], &admin, &[])
+    }
+
+    pub fn update_config_ix(&self, admin: &Pubkey, params: &ConfigParams) -> Instruction {
+        Instruction::new_with_bytes(
+            launchpad::ID,
+            &launchpad::instruction::UpdateConfig {
+                params: params.clone(),
+            }
+            .data(),
+            launchpad::accounts::UpdateConfig {
+                admin: *admin,
+                config: config_pda(),
+                fee_recipient: params.fee_recipient,
+                event_authority: event_authority(),
+                program: launchpad::ID,
+            }
+            .to_account_metas(None),
+        )
     }
 
     pub fn admin_accounts(&self, admin: &Pubkey) -> Vec<AccountMeta> {

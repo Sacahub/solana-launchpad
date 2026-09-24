@@ -59,7 +59,7 @@ flowchart LR
 | `transfer_admin` / `accept_admin` | admin / nuovo admin | passaggio di consegne in due step |
 | `create_token(name, symbol, uri)` | chiunque | lancia un token |
 | `buy(sol_amount, min_token_amount)` | chiunque | spende **al massimo** `sol_amount` lamport (fee incluse) |
-| `sell(token_amount, min_sol_amount)` | chiunque | vende esattamente `token_amount` token |
+| `sell(token_amount, min_sol_amount)` | chiunque | vende esattamente `token_amount` token (riapre una curva completata ma bloccata da più di 7 giorni) |
 | `claim_creator_fees()` | creator del token | incassa la sua quota di fee (anche dopo la migrazione) |
 | `collect_protocol_fees()` | chiunque | invia le fee di protocollo accumulate al `fee_recipient` |
 | `migrate()` | chiunque | porta una curva completata su Raydium |
@@ -74,7 +74,7 @@ flowchart LR
 | `pool_creator` | `["pool_creator", mint]` | PDA di sistema che crea il pool Raydium e brucia gli LP (svuotato a fine migrazione) |
 | pool Raydium | `["raydium_pool", mint]` | indirizzo del pool CPMM (vedi sicurezza) |
 
-Gli eventi (`TokenCreated`, `Trade`, `CurveCompleted`, `Migrated`, `CreatorFeesClaimed`, `ProtocolFeesCollected`, `ConfigUpdated`) sono emessi con `emit_cpi!`: finiscono nelle inner instruction della transazione e non possono essere persi per troncamento dei log.
+Gli eventi (`TokenCreated`, `Trade`, `CurveCompleted`, `CurveReopened`, `Migrated`, `CreatorFeesClaimed`, `ProtocolFeesCollected`, `ConfigUpdated`) sono emessi con `emit_cpi!`: finiscono nelle inner instruction della transazione e non possono essere persi per troncamento dei log.
 
 ### Sicurezza e garanzie
 
@@ -85,7 +85,9 @@ Gli eventi (`TokenCreated`, `Trade`, `CurveCompleted`, `Migrated`, `CreatorFeesC
 - **Migrazione non front-runnabile**: il pool Raydium usa un indirizzo che solo il programma può firmare (`["raydium_pool", mint]`), non il PDA canonico che chiunque potrebbe creare prima. Gli account temporanei sono creati in modo idempotente e i token "regalati" per bloccare la chiusura vengono bruciati: testato con scenari di griefing.
 - **Raydium non configurabile**: l'ID del programma Raydium è una costante compilata (mainnet di default, devnet con `--features devnet`). Nemmeno l'admin può dirottare la liquidità di una curva completata.
 - **Limiti on-chain** alle fee (5% trading, 1 SOL creazione, 10 SOL migrazione).
-- **Graduation sempre possibile**: la config viene rifiutata se una curva completata non raccoglierebbe almeno fee di migrazione + 1 SOL per il pool, e la fee di migrazione è fissata nel token al momento del lancio (un cambio di config successivo non vale per i token esistenti).
+- **Graduation sempre possibile**: la config viene rifiutata se una curva completata non raccoglierebbe almeno fee di migrazione + 1 SOL per il pool, o se la supply riservata non basta ad aprire il pool al prezzo finale della curva; la fee di migrazione è fissata nel token al momento del lancio (un cambio di config successivo non vale per i token esistenti).
+- **Mai fondi bloccati**: se una curva completata non riesce a migrare per 7 giorni (es. Raydium disabilita la creazione di pool), la prima vendita la riapre e i possessori possono uscire; quando torna completa, la graduation riparte.
+- **Fee recipient verificato**: `initialize`/`update_config` accettano solo un account di sistema già finanziato (rent-exempt), così i pagamenti di fee non possono fallire.
 
 **Poteri dell'admin (modello di fiducia)** – l'admin può: cambiare le fee di trading entro i limiti, cambiare parametri curva e fee di migrazione *dei token futuri*, mettere in pausa creazione e trading (anche le vendite), scegliere il fee tier Raydium. **Non** può: toccare i SOL delle curve, coniare token, cambiare metadati, cambiare il programma Raydium. L'**upgrade authority** del programma invece può cambiare il codice: in produzione va messa sotto multisig (es. Squads) con timelock.
 

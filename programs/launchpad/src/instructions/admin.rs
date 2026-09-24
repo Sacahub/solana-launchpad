@@ -1,4 +1,4 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, system_program};
 
 use crate::{
     constants::*,
@@ -12,6 +12,7 @@ use crate::{
 /// so nobody can front-run the initialization after deployment.
 #[event_cpi]
 #[derive(Accounts)]
+#[instruction(params: ConfigParams)]
 pub struct Initialize<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
@@ -37,11 +38,29 @@ pub struct Initialize<'info> {
     )]
     pub program_data: Account<'info, ProgramData>,
 
+    /// CHECK: must be a funded system account, see [`check_fee_recipient`].
+    #[account(address = params.fee_recipient @ LaunchpadError::InvalidFeeRecipient)]
+    pub fee_recipient: UncheckedAccount<'info>,
+
     pub system_program: Program<'info, System>,
+}
+
+/// The fee recipient receives lamports through direct credits and system
+/// transfers: it must be a rent-exempt system account, otherwise creations,
+/// fee collections and migrations would fail.
+fn check_fee_recipient(account: &AccountInfo) -> Result<()> {
+    require!(
+        account.owner == &system_program::ID
+            && !account.executable
+            && account.lamports() >= Rent::get()?.minimum_balance(0),
+        LaunchpadError::InvalidFeeRecipient
+    );
+    Ok(())
 }
 
 pub fn handle_initialize(ctx: Context<Initialize>, params: ConfigParams) -> Result<()> {
     params.validate()?;
+    check_fee_recipient(&ctx.accounts.fee_recipient)?;
 
     let config = &mut ctx.accounts.config;
     config.admin = ctx.accounts.admin.key();
@@ -70,8 +89,28 @@ pub struct AdminOnly<'info> {
     pub config: Box<Account<'info, Config>>,
 }
 
-pub fn handle_update_config(ctx: Context<AdminOnly>, params: ConfigParams) -> Result<()> {
+#[event_cpi]
+#[derive(Accounts)]
+#[instruction(params: ConfigParams)]
+pub struct UpdateConfig<'info> {
+    pub admin: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [CONFIG_SEED],
+        bump = config.bump,
+        has_one = admin @ LaunchpadError::Unauthorized,
+    )]
+    pub config: Box<Account<'info, Config>>,
+
+    /// CHECK: must be a funded system account, see [`check_fee_recipient`].
+    #[account(address = params.fee_recipient @ LaunchpadError::InvalidFeeRecipient)]
+    pub fee_recipient: UncheckedAccount<'info>,
+}
+
+pub fn handle_update_config(ctx: Context<UpdateConfig>, params: ConfigParams) -> Result<()> {
     params.validate()?;
+    check_fee_recipient(&ctx.accounts.fee_recipient)?;
     let config = &mut ctx.accounts.config;
     config.apply(&params);
     emit_cpi!(config_updated_event(config));

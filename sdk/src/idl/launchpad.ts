@@ -636,6 +636,9 @@ export type Launchpad = {
           "name": "programData"
         },
         {
+          "name": "feeRecipient"
+        },
+        {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
@@ -1238,6 +1241,9 @@ export type Launchpad = {
           }
         },
         {
+          "name": "feeRecipient"
+        },
+        {
           "name": "eventAuthority"
         },
         {
@@ -1322,6 +1328,19 @@ export type Launchpad = {
         129,
         243,
         14
+      ]
+    },
+    {
+      "name": "curveReopened",
+      "discriminator": [
+        134,
+        18,
+        70,
+        177,
+        37,
+        255,
+        73,
+        7
       ]
     },
     {
@@ -1456,7 +1475,7 @@ export type Launchpad = {
     {
       "code": 6015,
       "name": "invalidFeeRecipient",
-      "msg": "Fee recipient does not match the configuration"
+      "msg": "Fee recipient must match the configuration and be a rent-exempt system account"
     },
     {
       "code": 6016,
@@ -1577,6 +1596,10 @@ export type Launchpad = {
           },
           {
             "name": "reserved",
+            "docs": [
+              "Reserved space: new fields must be carved out of it so that existing",
+              "bonding curves keep deserializing after a program upgrade."
+            ],
             "type": {
               "array": [
                 "u8",
@@ -1699,7 +1722,8 @@ export type Launchpad = {
           {
             "name": "reserved",
             "docs": [
-              "Reserved space for future upgrades without a migration."
+              "Reserved space: new fields must be carved out of it so that the",
+              "account size stays the same and existing accounts keep deserializing."
             ],
             "type": {
               "array": [
@@ -1838,6 +1862,26 @@ export type Launchpad = {
           {
             "name": "virtualTokenReserves",
             "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "curveReopened",
+      "docs": [
+        "A completed curve that could not graduate within `MIGRATION_TIMEOUT_SECS`",
+        "was reopened by a sell."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
           },
           {
             "name": "timestamp",
@@ -2112,6 +2156,16 @@ export type Launchpad = {
       "name": "maxUriLen",
       "type": "u16",
       "value": "200"
+    },
+    {
+      "name": "migrationTimeoutSecs",
+      "docs": [
+        "Liveness fallback: a completed curve that could not graduate within this",
+        "delay (e.g. Raydium disabled pool creation or changed its interface)",
+        "reopens for selling, so the raised SOL can never be locked forever."
+      ],
+      "type": "i64",
+      "value": "604800"
     },
     {
       "name": "minGraduationLiquidityLamports",

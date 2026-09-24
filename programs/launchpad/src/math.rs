@@ -189,6 +189,21 @@ pub fn sol_to_complete(
     )?)
 }
 
+/// Tokens needed to pair all the SOL raised by a completed curve at its final
+/// price: `rt0 * (vt0 - rt0) / vt0` (independent of the virtual SOL). Exact up
+/// to rounding dust (the curve rounds in its favor); the migration costs taken
+/// from the pool SOL are orders of magnitude larger than that dust.
+pub fn max_pool_tokens(virtual_token_reserves: u64, real_token_reserves: u64) -> Result<u64> {
+    require!(
+        virtual_token_reserves > real_token_reserves,
+        LaunchpadError::InvalidConfig
+    );
+    to_u64(ceil_div(
+        u128::from(real_token_reserves) * u128::from(virtual_token_reserves - real_token_reserves),
+        u128::from(virtual_token_reserves),
+    )?)
+}
+
 /// Tokens to pair with `sol_amount` in the DEX pool so that the pool opens at
 /// (or marginally above) the final price of the curve. Any surplus is burned.
 pub fn pool_token_amount(
@@ -310,6 +325,22 @@ mod tests {
         let mut c = Curve::new();
         c.buy(1_000 * LAMPORTS).unwrap();
         assert_eq!(raised, c.rs);
+    }
+
+    #[test]
+    fn default_supply_covers_the_pool() {
+        let needed = max_pool_tokens(VT0, RT0).unwrap();
+        assert_eq!(needed, 206_886_011_183_598); // ~206.886M tokens
+        let lp_supply = 1_000_000_000 * UNIT - RT0;
+        assert!(lp_supply >= needed);
+        let mut c = Curve::new();
+        c.buy(1_000 * LAMPORTS).unwrap();
+        // Pairing everything raised differs from the bound by rounding dust only...
+        let all = pool_token_amount(c.vs, c.vt, c.rs, u64::MAX).unwrap();
+        assert!(all.abs_diff(needed) < 10_000, "{all} vs {needed}"); // < 0.01 token
+                                                                     // ...which the smallest possible migration cost (~0.04 SOL of rent) covers.
+        let after_costs = pool_token_amount(c.vs, c.vt, c.rs - 40_000_000, u64::MAX).unwrap();
+        assert!(after_costs < needed && after_costs < lp_supply);
     }
 
     #[test]

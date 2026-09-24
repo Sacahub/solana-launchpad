@@ -324,11 +324,7 @@ fn migration_fee_is_fixed_at_launch() {
     // The admin raises the migration fee after the launch.
     let mut params = default_params(env.fee_recipient.pubkey());
     params.migration_fee_lamports = 5 * LAMPORTS_PER_SOL;
-    let ix = anchor_lang::solana_program::instruction::Instruction::new_with_bytes(
-        launchpad::ID,
-        &anchor_lang::InstructionData::data(&launchpad::instruction::UpdateConfig { params }),
-        env.admin_accounts(&admin.pubkey()),
-    );
+    let ix = env.update_config_ix(&admin.pubkey(), &params);
     env.send(&[ix], &admin, &[]).unwrap();
 
     env.complete_curve(&mint);
@@ -347,4 +343,53 @@ fn migration_fee_is_fixed_at_launch() {
         env.curve(&later).migration_fee_lamports,
         5 * LAMPORTS_PER_SOL
     );
+}
+
+#[test]
+fn stuck_curve_reopens_for_selling_after_the_timeout() {
+    let mut env = Env::initialized();
+    let creator = env.new_user(10);
+    let mint = env.create_token(&creator);
+    let holder = env.new_user(100);
+    env.buy(&holder, &mint, 20 * LAMPORTS_PER_SOL, 0).unwrap();
+    let whale = env.complete_curve(&mint);
+    let cranker = env.new_user(1);
+
+    // Raydium disables pool creation for the configured fee tier.
+    let original = env.account(&RAYDIUM_AMM_CONFIG).unwrap();
+    let mut disabled = original.clone();
+    disabled.data[9] = 1;
+    env.svm.set_account(RAYDIUM_AMM_CONFIG, disabled).unwrap();
+    assert_error(
+        env.migrate(&cranker, &mint),
+        LaunchpadError::RaydiumPoolCreationDisabled,
+    );
+
+    // Before the timeout the curve stays closed...
+    let held = env.token_balance(&ata_2022(&holder.pubkey(), &mint));
+    env.advance_time(launchpad::constants::MIGRATION_TIMEOUT_SECS - 10);
+    assert_error(
+        env.sell(&holder, &mint, held, 0),
+        LaunchpadError::CurveNotTrading,
+    );
+
+    // ...after it, the first sell reopens it and holders can exit.
+    env.advance_time(10);
+    let meta = env.sell(&holder, &mint, held, 0).unwrap();
+    assert_eq!(events::<launchpad::events::CurveReopened>(&meta).len(), 1);
+    let curve = env.curve(&mint);
+    assert_eq!(curve.status, CurveStatus::Trading);
+    assert_eq!(curve.completed_at, 0);
+    assert_eq!(curve.real_token_reserves, held);
+
+    // Trading continues normally and the curve can complete again...
+    let whale_tokens = env.token_balance(&ata_2022(&whale.pubkey(), &mint));
+    env.sell(&whale, &mint, whale_tokens / 2, 0).unwrap();
+    env.complete_curve(&mint);
+    assert_eq!(env.curve(&mint).status, CurveStatus::Complete);
+
+    // ...and graduate once Raydium accepts pools again.
+    env.svm.set_account(RAYDIUM_AMM_CONFIG, original).unwrap();
+    env.migrate(&cranker, &mint).unwrap();
+    assert_eq!(env.curve(&mint).status, CurveStatus::Migrated);
 }

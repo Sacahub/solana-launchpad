@@ -43,7 +43,8 @@ pub struct Config {
     pub create_paused: bool,
     pub trading_paused: bool,
     pub bump: u8,
-    /// Reserved space for future upgrades without a migration.
+    /// Reserved space: new fields must be carved out of it so that the
+    /// account size stays the same and existing accounts keep deserializing.
     pub reserved: [u8; 128],
 }
 
@@ -101,6 +102,18 @@ impl ConfigParams {
         require!(
             self.creation_fee_lamports <= MAX_CREATION_FEE_LAMPORTS
                 && self.migration_fee_lamports <= MAX_MIGRATION_FEE_LAMPORTS,
+            LaunchpadError::InvalidConfig
+        );
+        // The supply left for the pool must be able to pair all the SOL raised
+        // at the final curve price, otherwise the pool would open above it and
+        // the first sellers on the DEX would drain it.
+        let lp_tokens = self.token_total_supply - self.initial_real_token_reserves;
+        require!(
+            lp_tokens
+                >= math::max_pool_tokens(
+                    self.initial_virtual_token_reserves,
+                    self.initial_real_token_reserves
+                )?,
             LaunchpadError::InvalidConfig
         );
         // A completed curve must raise enough to pay the migration fee and seed
@@ -163,6 +176,8 @@ pub struct BondingCurve {
     /// the graduation of an existing token impossible or more expensive.
     pub migration_fee_lamports: u64,
     pub bump: u8,
+    /// Reserved space: new fields must be carved out of it so that existing
+    /// bonding curves keep deserializing after a program upgrade.
     pub reserved: [u8; 64],
 }
 

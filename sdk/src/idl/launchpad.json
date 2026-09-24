@@ -630,6 +630,9 @@
           "name": "program_data"
         },
         {
+          "name": "fee_recipient"
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         },
@@ -1232,6 +1235,9 @@
           }
         },
         {
+          "name": "fee_recipient"
+        },
+        {
           "name": "event_authority"
         },
         {
@@ -1316,6 +1322,19 @@
         129,
         243,
         14
+      ]
+    },
+    {
+      "name": "CurveReopened",
+      "discriminator": [
+        134,
+        18,
+        70,
+        177,
+        37,
+        255,
+        73,
+        7
       ]
     },
     {
@@ -1450,7 +1469,7 @@
     {
       "code": 6015,
       "name": "InvalidFeeRecipient",
-      "msg": "Fee recipient does not match the configuration"
+      "msg": "Fee recipient must match the configuration and be a rent-exempt system account"
     },
     {
       "code": 6016,
@@ -1571,6 +1590,10 @@
           },
           {
             "name": "reserved",
+            "docs": [
+              "Reserved space: new fields must be carved out of it so that existing",
+              "bonding curves keep deserializing after a program upgrade."
+            ],
             "type": {
               "array": [
                 "u8",
@@ -1693,7 +1716,8 @@
           {
             "name": "reserved",
             "docs": [
-              "Reserved space for future upgrades without a migration."
+              "Reserved space: new fields must be carved out of it so that the",
+              "account size stays the same and existing accounts keep deserializing."
             ],
             "type": {
               "array": [
@@ -1832,6 +1856,26 @@
           {
             "name": "virtual_token_reserves",
             "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CurveReopened",
+      "docs": [
+        "A completed curve that could not graduate within `MIGRATION_TIMEOUT_SECS`",
+        "was reopened by a sell."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
           },
           {
             "name": "timestamp",
@@ -2106,6 +2150,16 @@
       "name": "MAX_URI_LEN",
       "type": "u16",
       "value": "200"
+    },
+    {
+      "name": "MIGRATION_TIMEOUT_SECS",
+      "docs": [
+        "Liveness fallback: a completed curve that could not graduate within this",
+        "delay (e.g. Raydium disabled pool creation or changed its interface)",
+        "reopens for selling, so the raised SOL can never be locked forever."
+      ],
+      "type": "i64",
+      "value": "604800"
     },
     {
       "name": "MIN_GRADUATION_LIQUIDITY_LAMPORTS",

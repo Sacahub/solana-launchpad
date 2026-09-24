@@ -243,6 +243,13 @@ export class Db {
     ).run(timestamp, mint);
   }
 
+  /** A stuck completed curve was reopened by a sell after the migration timeout. */
+  markReopened(mint: string): void {
+    this.stmt(
+      "UPDATE tokens SET status = 'trading', completed_at = NULL WHERE mint = ? AND status = 'complete'",
+    ).run(mint);
+  }
+
   insertGraduation(ev: MigratedEvent, ctx: EventContext): void {
     const mint = ev.mint.toBase58();
     this.stmt(`

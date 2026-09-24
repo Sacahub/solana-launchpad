@@ -42,7 +42,7 @@ pub mod launchpad {
     }
 
     /// Replaces the admin-settable configuration values.
-    pub fn update_config(ctx: Context<AdminOnly>, params: ConfigParams) -> Result<()> {
+    pub fn update_config(ctx: Context<UpdateConfig>, params: ConfigParams) -> Result<()> {
         instructions::admin::handle_update_config(ctx, params)
     }
 

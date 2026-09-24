@@ -2,7 +2,7 @@ import { EventEmitter } from "node:events";
 
 /** Live notification pushed to API clients (Server-Sent Events). */
 export interface LiveEvent {
-  type: "tokenCreated" | "trade" | "curveCompleted" | "migrated";
+  type: "tokenCreated" | "trade" | "curveCompleted" | "curveReopened" | "migrated";
   mint: string;
   signature: string;
   data: unknown;
