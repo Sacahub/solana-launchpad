@@ -1564,6 +1564,14 @@ export type Launchpad = {
             "type": "pubkey"
           },
           {
+            "name": "migrationFeeLamports",
+            "docs": [
+              "Migration fee snapshotted at launch: later config changes cannot make",
+              "the graduation of an existing token impossible or more expensive."
+            ],
+            "type": "u64"
+          },
+          {
             "name": "bump",
             "type": "u8"
           },
@@ -2104,6 +2112,16 @@ export type Launchpad = {
       "name": "maxUriLen",
       "type": "u16",
       "value": "200"
+    },
+    {
+      "name": "minGraduationLiquidityLamports",
+      "docs": [
+        "SOL that a completed curve must leave for the Raydium pool on top of the",
+        "migration fee (Raydium's own costs are ~0.2 SOL). Enforced when the curve",
+        "parameters are configured, so that every curve that completes can graduate."
+      ],
+      "type": "u64",
+      "value": "1000000000"
     },
     {
       "name": "poolCreatorSeed",

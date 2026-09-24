@@ -86,6 +86,7 @@ fn create_token_launches_a_fixed_supply_token() {
     assert_eq!(curve.real_token_reserves, 793_100_000 * UNIT);
     assert_eq!(curve.real_sol_reserves, 0);
     assert_eq!(curve.status, CurveStatus::Trading);
+    assert_eq!(curve.migration_fee_lamports, 500_000_000);
 
     // Creation fee charged.
     assert_eq!(env.lamports(&fee_recipient), fee_before + 20_000_000);

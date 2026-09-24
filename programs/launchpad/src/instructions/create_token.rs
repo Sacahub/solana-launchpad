@@ -221,6 +221,7 @@ pub fn handle_create_token(
     curve.created_at = now;
     curve.completed_at = 0;
     curve.raydium_pool = Pubkey::default();
+    curve.migration_fee_lamports = config.migration_fee_lamports;
     curve.bump = bump;
     curve.reserved = [0; 64];
 

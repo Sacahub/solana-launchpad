@@ -34,6 +34,8 @@ export interface BondingCurveAccount extends CurveReserves {
   createdAt: number;
   completedAt: number | null;
   raydiumPool: PublicKey | null;
+  /** Migration fee fixed at launch (lamports). */
+  migrationFeeLamports: bigint;
 }
 
 /** Values accepted by `initialize` / `update_config`. */

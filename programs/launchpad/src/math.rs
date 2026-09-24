@@ -172,6 +172,23 @@ pub fn quote_sell(
     })
 }
 
+/// SOL entering the reserves (fees excluded) when the remaining
+/// `real_token_reserves` are bought, i.e. what a curve raises until completion.
+pub fn sol_to_complete(
+    virtual_sol_reserves: u64,
+    virtual_token_reserves: u64,
+    real_token_reserves: u64,
+) -> Result<u64> {
+    require!(
+        virtual_token_reserves > real_token_reserves,
+        LaunchpadError::InvalidConfig
+    );
+    to_u64(ceil_div(
+        u128::from(virtual_sol_reserves) * u128::from(real_token_reserves),
+        u128::from(virtual_token_reserves - real_token_reserves),
+    )?)
+}
+
 /// Tokens to pair with `sol_amount` in the DEX pool so that the pool opens at
 /// (or marginally above) the final price of the curve. Any surplus is burned.
 pub fn pool_token_amount(
@@ -285,6 +302,14 @@ mod tests {
         assert_eq!(q.total_cost, q.sol_amount + q.protocol_fee + q.creator_fee);
         // Nothing left to buy.
         assert!(quote_buy(c.vs, c.vt, c.rt, LAMPORTS, FEES).is_err());
+    }
+
+    #[test]
+    fn sol_to_complete_matches_the_completing_buy() {
+        let raised = sol_to_complete(VS0, VT0, RT0).unwrap();
+        let mut c = Curve::new();
+        c.buy(1_000 * LAMPORTS).unwrap();
+        assert_eq!(raised, c.rs);
     }
 
     #[test]

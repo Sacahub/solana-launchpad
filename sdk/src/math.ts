@@ -158,6 +158,18 @@ export function solCostForTokens(curve: CurveReserves, tokenAmount: bigint, fees
   return ceilDiv(net * (BPS + bps), BPS);
 }
 
+/**
+ * SOL (fees excluded) still needed to buy every remaining curve token, i.e.
+ * what separates the curve from graduation (`math::sol_to_complete`).
+ */
+export function solToComplete(curve: CurveReserves): bigint {
+  if (curve.realTokenReserves === 0n) return 0n;
+  return ceilDiv(
+    curve.virtualSolReserves * curve.realTokenReserves,
+    curve.virtualTokenReserves - curve.realTokenReserves,
+  );
+}
+
 /** Tokens paired with `solAmount` in the DEX pool at graduation (`math::pool_token_amount`). */
 export function poolTokenAmount(curve: CurveReserves, solAmount: bigint, availableTokens: bigint): bigint {
   const tokens = (solAmount * curve.virtualTokenReserves) / curve.virtualSolReserves;

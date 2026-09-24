@@ -58,6 +58,7 @@ export function bondingCurveFromRaw(address: PublicKey, raw: Raw): BondingCurveA
     createdAt: timestampOf(raw.createdAt),
     completedAt: completedAt === 0 ? null : completedAt,
     raydiumPool: optionalKey(raw.raydiumPool),
+    migrationFeeLamports: toBigInt(raw.migrationFeeLamports),
   };
 }
 

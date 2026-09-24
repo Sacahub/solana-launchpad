@@ -285,23 +285,66 @@ fn migration_cannot_be_griefed() {
 }
 
 #[test]
-fn migration_fails_cleanly_when_raised_sol_is_too_low() {
-    let mut env = Env::new();
-    // A tiny curve: completes with ~0.1 SOL, not enough for Raydium's 0.15 SOL fee.
-    let mut params = default_params(env.fee_recipient.pubkey());
-    params.initial_virtual_sol_reserves = LAMPORTS_PER_SOL / 10;
-    params.initial_real_token_reserves = 500_000_000 * UNIT;
-    params.migration_fee_lamports = 0;
-    env.initialize(&params).unwrap();
-
+fn migration_waits_out_an_unaffordable_raydium_fee() {
+    let mut env = Env::initialized();
     let creator = env.new_user(10);
     let mint = env.create_token(&creator);
     env.complete_curve(&mint);
     let cranker = env.new_user(1);
+
+    // Raydium raises its pool creation fee above what the curve raised.
+    let original = env.account(&RAYDIUM_AMM_CONFIG).unwrap();
+    let mut expensive = original.clone();
+    expensive.data[36..44].copy_from_slice(&(100 * LAMPORTS_PER_SOL).to_le_bytes());
+    env.svm.set_account(RAYDIUM_AMM_CONFIG, expensive).unwrap();
     assert_error(
         env.migrate(&cranker, &mint),
         LaunchpadError::InsufficientMigrationFunds,
     );
-    // Nothing moved: the curve is still complete and funded.
-    assert_eq!(env.curve(&mint).status, CurveStatus::Complete);
+    // Nothing moved: the curve is still complete and funded...
+    let curve = env.curve(&mint);
+    assert_eq!(curve.status, CurveStatus::Complete);
+    assert!(curve.real_sol_reserves > 85 * LAMPORTS_PER_SOL);
+
+    // ...and graduates as soon as the fee is affordable again (or the admin
+    // points the config to another Raydium fee tier).
+    env.svm.set_account(RAYDIUM_AMM_CONFIG, original).unwrap();
+    env.migrate(&cranker, &mint).unwrap();
+    assert_eq!(env.curve(&mint).status, CurveStatus::Migrated);
+}
+
+#[test]
+fn migration_fee_is_fixed_at_launch() {
+    let mut env = Env::initialized();
+    let admin = env.admin.insecure_clone();
+    let creator = env.new_user(10);
+    let mint = env.create_token(&creator);
+    assert_eq!(env.curve(&mint).migration_fee_lamports, 500_000_000);
+
+    // The admin raises the migration fee after the launch.
+    let mut params = default_params(env.fee_recipient.pubkey());
+    params.migration_fee_lamports = 5 * LAMPORTS_PER_SOL;
+    let ix = anchor_lang::solana_program::instruction::Instruction::new_with_bytes(
+        launchpad::ID,
+        &anchor_lang::InstructionData::data(&launchpad::instruction::UpdateConfig { params }),
+        env.admin_accounts(&admin.pubkey()),
+    );
+    env.send(&[ix], &admin, &[]).unwrap();
+
+    env.complete_curve(&mint);
+    let cranker = env.new_user(1);
+    let meta = env.migrate(&cranker, &mint).unwrap();
+    let ev = &events::<Migrated>(&meta)[0];
+    let curve_protocol_fees = ev.protocol_amount; // migration fee + protocol fees + rents
+    assert!(
+        curve_protocol_fees < 2 * LAMPORTS_PER_SOL,
+        "old 0.5 SOL fee applies"
+    );
+
+    // Tokens launched after the change pay the new fee.
+    let later = env.create_token(&creator);
+    assert_eq!(
+        env.curve(&later).migration_fee_lamports,
+        5 * LAMPORTS_PER_SOL
+    );
 }

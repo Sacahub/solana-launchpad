@@ -82,6 +82,27 @@ fn initialize_rejects_invalid_params() {
     p.token_total_supply = p.initial_real_token_reserves - 1;
     assert_error(env.initialize(&p), LaunchpadError::InvalidConfig);
 
+    // No supply left for the DEX pool.
+    let mut p = base.clone();
+    p.token_total_supply = p.initial_real_token_reserves;
+    assert_error(env.initialize(&p), LaunchpadError::InvalidConfig);
+
+    // A curve raising ~0.09 SOL could never pay the migration and seed a pool.
+    let mut p = base.clone();
+    p.initial_virtual_sol_reserves = LAMPORTS_PER_SOL / 10;
+    p.initial_real_token_reserves = 500_000_000 * UNIT;
+    p.migration_fee_lamports = 0;
+    assert_error(env.initialize(&p), LaunchpadError::InvalidConfig);
+
+    // Raises ~10.48 SOL: a 10 SOL migration fee would leave less than 1 SOL.
+    let mut p = base.clone();
+    p.initial_virtual_sol_reserves = 3_700_000_000;
+    p.migration_fee_lamports = 10 * LAMPORTS_PER_SOL;
+    assert_error(env.initialize(&p), LaunchpadError::InvalidConfig);
+    // Raises ~14.17 SOL: enough.
+    p.initial_virtual_sol_reserves = 5 * LAMPORTS_PER_SOL;
+    assert!(p.validate().is_ok());
+
     let mut p = base.clone();
     p.migration_fee_lamports = 10 * LAMPORTS_PER_SOL + 1;
     assert_error(env.initialize(&p), LaunchpadError::InvalidConfig);

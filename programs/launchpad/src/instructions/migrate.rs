@@ -155,7 +155,7 @@ pub fn handle_migrate(ctx: Context<Migrate>) -> Result<()> {
     let raydium_cost = raydium::pool_creation_cost(&rent, create_pool_fee)?;
 
     let curve = &accounts.bonding_curve;
-    let migration_fee = accounts.config.migration_fee_lamports;
+    let migration_fee = curve.migration_fee_lamports;
     let pool_sol = curve
         .real_sol_reserves
         .checked_sub(migration_fee)

@@ -54,7 +54,7 @@ flowchart LR
 | Istruzione | Chi | Cosa fa |
 |---|---|---|
 | `initialize(params)` | solo l'upgrade authority del programma | crea la config globale (impossibile front-runnarla dopo il deploy) |
-| `update_config(params)` | admin | fee, parametri curva (solo per i token futuri), fee tier Raydium |
+| `update_config(params)` | admin | fee di trading, parametri curva e fee di migrazione (solo per i token futuri), fee tier Raydium |
 | `set_paused(create, trading)` | admin | interruttori di emergenza |
 | `transfer_admin` / `accept_admin` | admin / nuovo admin | passaggio di consegne in due step |
 | `create_token(name, symbol, uri)` | chiunque | lancia un token |
@@ -85,8 +85,9 @@ Gli eventi (`TokenCreated`, `Trade`, `CurveCompleted`, `Migrated`, `CreatorFeesC
 - **Migrazione non front-runnabile**: il pool Raydium usa un indirizzo che solo il programma può firmare (`["raydium_pool", mint]`), non il PDA canonico che chiunque potrebbe creare prima. Gli account temporanei sono creati in modo idempotente e i token "regalati" per bloccare la chiusura vengono bruciati: testato con scenari di griefing.
 - **Raydium non configurabile**: l'ID del programma Raydium è una costante compilata (mainnet di default, devnet con `--features devnet`). Nemmeno l'admin può dirottare la liquidità di una curva completata.
 - **Limiti on-chain** alle fee (5% trading, 1 SOL creazione, 10 SOL migrazione).
+- **Graduation sempre possibile**: la config viene rifiutata se una curva completata non raccoglierebbe almeno fee di migrazione + 1 SOL per il pool, e la fee di migrazione è fissata nel token al momento del lancio (un cambio di config successivo non vale per i token esistenti).
 
-**Poteri dell'admin (modello di fiducia)** – l'admin può: cambiare le fee entro i limiti, cambiare i parametri curva *dei token futuri*, mettere in pausa creazione e trading (anche le vendite), scegliere il fee tier Raydium. **Non** può: toccare i SOL delle curve, coniare token, cambiare metadati, cambiare il programma Raydium. L'**upgrade authority** del programma invece può cambiare il codice: in produzione va messa sotto multisig (es. Squads) con timelock.
+**Poteri dell'admin (modello di fiducia)** – l'admin può: cambiare le fee di trading entro i limiti, cambiare parametri curva e fee di migrazione *dei token futuri*, mettere in pausa creazione e trading (anche le vendite), scegliere il fee tier Raydium. **Non** può: toccare i SOL delle curve, coniare token, cambiare metadati, cambiare il programma Raydium. L'**upgrade authority** del programma invece può cambiare il codice: in produzione va messa sotto multisig (es. Squads) con timelock.
 
 > ⚠️ Il codice è testato ma **non è stato sottoposto ad audit**. Prima di gestire fondi reali su mainnet serve un audit di sicurezza indipendente.
 

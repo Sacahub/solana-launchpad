@@ -49,6 +49,12 @@ pub const MAX_CREATION_FEE_LAMPORTS: u64 = 1_000_000_000; // 1 SOL
 #[constant]
 pub const MAX_MIGRATION_FEE_LAMPORTS: u64 = 10_000_000_000_u64; // 10 SOL
 
+/// SOL that a completed curve must leave for the Raydium pool on top of the
+/// migration fee (Raydium's own costs are ~0.2 SOL). Enforced when the curve
+/// parameters are configured, so that every curve that completes can graduate.
+#[constant]
+pub const MIN_GRADUATION_LIQUIDITY_LAMPORTS: u64 = 1_000_000_000_u64; // 1 SOL
+
 /// Metadata limits (Token-2022 metadata extension, stored on the mint itself).
 #[constant]
 pub const MAX_NAME_LEN: u16 = 32;

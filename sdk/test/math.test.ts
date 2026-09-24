@@ -12,6 +12,7 @@ import {
   quoteBuy,
   quoteSell,
   solCostForTokens,
+  solToComplete,
   solToLamports,
   spotPriceSol,
   tokensToUnits,
@@ -96,7 +97,9 @@ describe("curve helpers", () => {
   });
 
   it("completes at ~85 SOL raised", () => {
+    expect(Number(lamportsToSol(solToComplete(START)))).toBeCloseTo(85.005, 2);
     const q = quoteBuy(START, solToLamports(200), FEES);
+    expect(q.solAmount).toBe(solToComplete(START));
     expect(q.completesCurve).toBe(true);
     expect(q.tokenAmount).toBe(DEFAULT_CURVE.initialRealTokenReserves);
     expect(Number(lamportsToSol(q.solAmount))).toBeCloseTo(85.005, 2);

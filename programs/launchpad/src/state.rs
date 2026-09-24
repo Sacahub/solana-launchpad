@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{constants::*, errors::LaunchpadError};
+use crate::{constants::*, errors::LaunchpadError, math};
 
 /// Global launchpad configuration, controlled by the admin.
 ///
@@ -90,11 +90,12 @@ impl ConfigParams {
             self.fee_recipient != Pubkey::default(),
             LaunchpadError::InvalidConfig
         );
+        // Some supply must be left for the DEX pool.
         require!(
             self.initial_virtual_sol_reserves > 0
                 && self.initial_real_token_reserves > 0
                 && self.initial_virtual_token_reserves > self.initial_real_token_reserves
-                && self.token_total_supply >= self.initial_real_token_reserves,
+                && self.token_total_supply > self.initial_real_token_reserves,
             LaunchpadError::InvalidConfig
         );
         require!(
@@ -102,6 +103,18 @@ impl ConfigParams {
                 && self.migration_fee_lamports <= MAX_MIGRATION_FEE_LAMPORTS,
             LaunchpadError::InvalidConfig
         );
+        // A completed curve must raise enough to pay the migration fee and seed
+        // the pool, otherwise its liquidity could never graduate.
+        let raised = math::sol_to_complete(
+            self.initial_virtual_sol_reserves,
+            self.initial_virtual_token_reserves,
+            self.initial_real_token_reserves,
+        )?;
+        let needed = self
+            .migration_fee_lamports
+            .checked_add(MIN_GRADUATION_LIQUIDITY_LAMPORTS)
+            .ok_or(LaunchpadError::MathOverflow)?;
+        require!(raised >= needed, LaunchpadError::InvalidConfig);
         require!(
             self.raydium_amm_config != Pubkey::default()
                 && self.raydium_create_pool_fee != Pubkey::default(),
@@ -146,6 +159,9 @@ pub struct BondingCurve {
     pub completed_at: i64,
     /// Raydium CPMM pool address once migrated.
     pub raydium_pool: Pubkey,
+    /// Migration fee snapshotted at launch: later config changes cannot make
+    /// the graduation of an existing token impossible or more expensive.
+    pub migration_fee_lamports: u64,
     pub bump: u8,
     pub reserved: [u8; 64],
 }
