@@ -6,8 +6,8 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tsx watch --disable-warning=ExperimentalWarning src/index.ts",
-    "start": "node --disable-warning=ExperimentalWarning dist/index.js",
+    "dev": "tsx watch --env-file-if-exists=.env --disable-warning=ExperimentalWarning src/index.ts",
+    "start": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning dist/index.js",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run test/api.test.ts test/storage.test.ts",

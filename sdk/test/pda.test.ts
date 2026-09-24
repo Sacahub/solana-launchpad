@@ -2,14 +2,17 @@ import { NATIVE_MINT } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { describe, expect, it } from "vitest";
 
-import { RAYDIUM, findConfigPda, findRaydiumPoolAccounts, findRaydiumPoolPda } from "../src/index.js";
+import {
+  LAUNCHPAD_PROGRAM_ID,
+  RAYDIUM,
+  findConfigPda,
+  findRaydiumPoolAccounts,
+  findRaydiumPoolPda,
+} from "../src/index.js";
 
 describe("pda", () => {
   it("derives the config PDA of the program", () => {
-    const [expected] = PublicKey.findProgramAddressSync(
-      [Buffer.from("config")],
-      new PublicKey("AyhSsRnM6gdSSVEQjzTmXBzwnTKVguDZxsxx3E7Q9v2M"),
-    );
+    const [expected] = PublicKey.findProgramAddressSync([Buffer.from("config")], LAUNCHPAD_PROGRAM_ID);
     expect(findConfigPda().equals(expected)).toBe(true);
   });
 

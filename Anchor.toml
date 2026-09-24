@@ -1,3 +1,5 @@
+skip_local_validator = true
+
 [toolchain]
 
 [features]
