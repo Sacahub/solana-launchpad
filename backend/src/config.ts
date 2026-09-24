@@ -13,6 +13,8 @@ export interface AppConfig {
   /** Base URL of this server, used to build URIs of locally stored files. */
   publicUrl: string;
   corsOrigin: string;
+  /** Behind a reverse proxy: take the client IP from X-Forwarded-For. */
+  trustProxy: boolean;
   indexer: {
     enabled: boolean;
     pollIntervalMs: number;
@@ -71,6 +73,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     host: env.HOST ?? "0.0.0.0",
     publicUrl: (env.PUBLIC_URL ?? `http://localhost:${port}`).replace(/\/$/, ""),
     corsOrigin: env.CORS_ORIGIN ?? "*",
+    trustProxy: bool(env.TRUST_PROXY, false),
     indexer: {
       enabled: bool(env.INDEXER_ENABLED, true),
       pollIntervalMs: int(env.POLL_INTERVAL_MS, 2_000),

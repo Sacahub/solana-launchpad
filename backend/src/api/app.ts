@@ -23,7 +23,13 @@ export interface AppDeps {
   siteUrl?: string;
   /** Uploads allowed per IP and minute. */
   uploadsPerMinute?: number;
+  /** Client IP used for rate limiting (default: proxy headers, then "local"). */
+  clientIp?: (c: Context) => string;
 }
+
+/** Client IP from proxy headers. Only trustworthy behind a proxy that sets them. */
+export const ipFromHeaders = (c: Context): string =>
+  c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("x-real-ip") || "local";
 
 const SORTS: TokenSort[] = ["new", "market_cap", "last_trade", "trending", "progress"];
 const STATUSES: TokenStatusFilter[] = ["trading", "complete", "migrated"];
@@ -208,7 +214,7 @@ export function createApp(deps: AppDeps): Hono {
     "/api/metadata",
     bodyLimit({ maxSize: maxImageBytes + 64 * 1024, onError: (c) => c.json({ error: "payload too large" }, 413) }),
     async (c) => {
-      const ip = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("x-real-ip") || "local";
+      const ip = (deps.clientIp ?? ipFromHeaders)(c);
       if (!uploads.take(ip)) return c.json({ error: "too many uploads, retry in a minute" }, 429);
 
       const body = await c.req.parseBody();

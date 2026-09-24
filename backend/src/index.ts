@@ -1,12 +1,13 @@
 import { mkdirSync } from "node:fs";
 
 import { serve } from "@hono/node-server";
+import { getConnInfo } from "@hono/node-server/conninfo";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { LaunchpadClient, type ConfigAccount } from "@launchpad/sdk";
 import { Connection } from "@solana/web3.js";
 import { Hono } from "hono";
 
-import { createApp } from "./api/app.js";
+import { createApp, ipFromHeaders } from "./api/app.js";
 import { loadConfig } from "./config.js";
 import { Db } from "./db/db.js";
 import { EventBus } from "./indexer/bus.js";
@@ -57,6 +58,7 @@ app.route(
     corsOrigin: config.corsOrigin,
     maxImageBytes: config.storage.maxImageBytes,
     siteUrl: config.publicUrl,
+    clientIp: config.trustProxy ? ipFromHeaders : (c) => getConnInfo(c).remote.address ?? "unknown",
   }),
 );
 
